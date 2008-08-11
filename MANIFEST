@@ -1,3 +1,4 @@
+.cvsignore
 Changes
 example/ex01.pl
 inc/Module/AutoInstall.pm
