@@ -17,11 +17,13 @@ no_index:
     - inc
     - t
 requires:
+  Cache::File: 0
   Encode: 0
   IO::All: 0
   IO::All::LWP: 0
   Moose: 0
   MooseX::Types::URI: 0
   Text::Trim: 0
+  URI::Fetch: 0
   Web::Scraper: 0
-version: 0.03
+version: 0.04

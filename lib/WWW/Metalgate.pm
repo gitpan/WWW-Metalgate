@@ -5,6 +5,7 @@ use strict;
 
 use WWW::Metalgate::Column;
 use WWW::Metalgate::Year;
+use WWW::Metalgate::ReviewIndex;
 
 =head1 NAME
 
@@ -12,11 +13,11 @@ WWW::Metalgate - parse http://www.metalgate.jp/.
 
 =head1 VERSION
 
-Version 0.02
+Version 0.04
 
 =cut
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 =head1 SYNOPSIS
 
@@ -49,6 +50,16 @@ sub years {
 
 sub year {
     WWW::Metalgate::Year->new( year => $_[1] );
+}
+
+=head2 review_index
+
+    my $review_index = WWW::Metalgate->review_index; # WWW::Metalgate::ReviewIndex instance.
+
+=cut
+
+sub review_index {
+    WWW::Metalgate::ReviewIndex->new;
 }
 
 =head1 AUTHOR

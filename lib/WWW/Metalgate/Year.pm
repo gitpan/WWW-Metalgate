@@ -8,6 +8,7 @@ use MooseX::Types::URI qw(Uri FileUri DataUri);
 use Encode;
 use IO::All;
 use Text::Trim;
+use Web::Scraper;
 
 =head1 NAME
 
@@ -15,11 +16,11 @@ WWW::Metalgate::Year
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 SYNOPSIS
 
@@ -52,6 +53,8 @@ our $VERSION = '0.01';
 
 has 'uri'  => (is => 'rw', isa => Uri, coerce  => 1);
 has 'year' => (is => 'ro', isa => 'Int', required => 1);
+    
+with 'WWW::Metalgate::Role::Html';
 
 =head2 BUILD
 
@@ -71,33 +74,57 @@ sub BUILD {
 sub best_albums {
     my $self = shift;
 
-    my @albums;
+    my $album = sub {
+        my $node = shift;
+        return () unless $node->as_text =~ m/No\.\d+/ and $node->find_by_tag_name('img');
 
-    my $html = do {
-        my $all = io($self->uri)->all;
-        $all = decode("cp932", $all);
-        $all =~ s/\015\012\s*//g;
-        $all =~ m/(?:The Best 10 Albums of \d{4}|The Best Albums of The 1993)/g;
-        $all =~ m/\G.*?<hr>/g;
-        $all =~ m/\G(.*?)<hr>/g;
-        $1;
-    };
-
-    return unless $html;
-
-    my $no = 1;
-    my $re = qr|>([^<>]*?) / ([^<>]*?)<|msi;
-    while ($html =~ m/$re/g) {
-        push @albums, {
-            artist => trim($1),
-            album  => trim($2),
-            no     => $no,
-            year   => $self->year,
+        my ($no, $artist, $album) = ($node->as_text =~ m/No\.(\d+)\s*(.*?)\s*\/\s*(.*?)\s*$/);
+        return {
+            no          => $no,
+            album       => $album,
+            artist      => $artist,
+            year        => $self->year,
+            description => trim( $node->right->right->as_text ),
+            #raw        => $node->as_text,
         };
-        $no++;
-    }
+    };
+    my $tables = scraper {
+        process "table",
+            'tables[]' => $album;
+    };
+    my $data = $tables->scrape( $self->html );
 
-    return @albums;
+    return @{$data->{tables}};
+}
+
+=head2 best_tunes
+
+=cut
+
+sub best_tunes {
+    my $self = shift;
+
+    my $tune = sub {
+        my $node = shift;
+        return () unless $node->as_text =~ m/^No\.\d+/ and !$node->find_by_tag_name('img');
+
+        my ($name, $artist) = split(/\s*\/\s*/, $node->address(".0.1")->as_text);
+        my $description = $node->right->as_text || $node->address(".1")->as_text;
+        return {
+            no          => ($node->address(".0.0")->as_text =~ m/(\d+)/),
+            name        => trim($name),
+            artist      => trim($artist),
+            year        => $self->year,
+            description => trim($description),
+        };
+    };
+    my $tables = scraper {
+        process "table",
+            'tables[]' => $tune;
+    };
+    my $data = $tables->scrape( $self->html );
+
+    return @{$data->{tables}};
 }
 
 =head1 AUTHOR

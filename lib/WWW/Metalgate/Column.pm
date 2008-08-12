@@ -14,11 +14,11 @@ WWW::Metalgate::Column
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 SYNOPSIS
 
@@ -46,6 +46,8 @@ our $VERSION = '0.01';
 
 has 'uri' => (is => 'rw', isa => Uri, coerce  => 1, default => "http://www.metalgate.jp/column.htm");
 
+with 'WWW::Metalgate::Role::Html';
+
 =head2 years
 
 =cut
@@ -63,7 +65,7 @@ sub years {
             'years[]' => $year;
     };
 
-    my $data  = $years->scrape( $self->uri );
+    my $data  = $years->scrape( $self->html );
     my @years = map { $_->{url} =~ m/best(\d{4})/ } (@{$data->{years}});
     my @objs  = map { WWW::Metalgate::Year->new( year => $_ ) } sort @years;
 
